@@ -1,336 +1,370 @@
-// Data: Python Quests Map
 const quests = [
     {
         id: 1,
         title: "Hello World",
-        desc: "The beginning of every hacker's journey. Print 'Hello World' to the console.",
-        code: `___("Hello World")`,
+        desc: "Print 'Hello Tracker' to the screen.",
+        code: `<span class="hl-func">___</span>(<span class="hl-string">"Hello Tracker"</span>)`,
         options: ["echo", "print", "console.log", "printf"],
-        correct: 1, // index of "print"
-        reward: 10,
-        completed: false
+        correct: 1, 
+        reward: 10
     },
     {
         id: 2,
-        title: "Variable Assignment",
-        desc: "Store the number 42 in a variable named `answer`.",
-        code: `answer ___ 42`,
+        title: "Variables",
+        desc: "Bind integer 5 to variable x.",
+        code: `x ___ 5`,
         options: ["==", ":=", "=", "->"],
         correct: 2,
-        reward: 15,
-        completed: false
+        reward: 15
     },
     {
         id: 3,
-        title: "Conditional Logic",
-        desc: "Check if gems are greater than 0.",
-        code: `___ gems > 0:\n    print("You are rich!")`,
+        title: "If Statement",
+        desc: "Check if gems are sufficient.",
+        code: `<span class="hl-keyword">___</span> gems > 0:
+    <span class="hl-func">print</span>(<span class="hl-string">"Rich!"</span>)`,
         options: ["if", "when", "check", "while"],
         correct: 0,
-        reward: 20,
-        completed: false
+        reward: 20
     },
     {
         id: 4,
-        title: "The For Loop",
-        desc: "Loop exactly 5 times.",
-        code: `for i in range(___):\n    print(i)`,
+        title: "For Loops",
+        desc: "Loop 5 times exactly.",
+        code: `<span class="hl-keyword">for</span> i <span class="hl-keyword">in</span> <span class="hl-func">range</span>(___):
+    <span class="hl-func">print</span>(i)`,
         options: ["1, 5", "5", "0 to 5", "item"],
         correct: 1,
-        reward: 25,
-        completed: false
+        reward: 25
     },
     {
         id: 5,
-        title: "Defining Functions",
-        desc: "Define a function named `hack_mainframe`.",
-        code: `___ hack_mainframe():\n    return "Access Granted"`,
+        title: "Functions",
+        desc: "Define a usable function.",
+        code: `<span class="hl-keyword">___</span> <span class="hl-func">login</span>():
+    <span class="hl-keyword">return</span> <span class="hl-string">"Yes"</span>`,
         options: ["func", "function", "def", "let"],
         correct: 2,
-        reward: 50,
-        completed: false
+        reward: 50
     }
 ];
 
-// Mock Leaderboard Data
-const leaderboardData = [
-    { id: '1', name: 'GuidoVanR', score: 1450, avatar: 'Milo' },
+const mockLeaderboard = [
+    { id: '1', name: 'ZuckBot', score: 1450, avatar: 'Milo' },
     { id: '2', name: 'CodeNinja', score: 1200, avatar: 'Max' },
-    { id: 'user', name: 'Player One', score: 0, avatar: 'Programmer' },
+    { id: 'user', name: 'You', score: 0, avatar: 'Alpha' },
     { id: '4', name: 'NoobMaster69', score: 50, avatar: 'Oscar' }
 ];
 
-// App State
 let state = {
-    streak: parseInt(localStorage.getItem('streak')) || 0,
-    gems: parseInt(localStorage.getItem('gems')) || 100,
-    xp: parseInt(localStorage.getItem('xp')) || 0,
-    activeQuestIndex: parseInt(localStorage.getItem('activeQuest')) || 0,
+    streak: parseInt(localStorage.getItem('streak'), 10) || 0,
+    gems: parseInt(localStorage.getItem('gems'), 10) || 100,
+    xp: parseInt(localStorage.getItem('xp'), 10) || 0,
+    activeQuestIndex: parseInt(localStorage.getItem('activeQuest'), 10) || 0,
     selectedOptionIndex: null
 };
 
-// DOM Elements
-const els = {
-    streakCount: document.getElementById('streak-count'),
-    gemCount: document.getElementById('gem-count'),
-    navQuests: document.getElementById('nav-quests'),
-    navLeaderboard: document.getElementById('nav-leaderboard'),
-    navProfile: document.getElementById('nav-profile'),
-    views: document.querySelectorAll('.view'),
-    pathContainer: document.getElementById('path-container'),
-    leaderboardList: document.getElementById('leaderboard-list'),
+// UI Map
+const ui = {};
+
+function init() {
+    // Map UI
+    ui.app = document.getElementById('main-app');
+    ui.obsOverlay = document.getElementById('onboarding-overlay');
+    ui.obsBtn = document.getElementById('obs-next-btn');
+    ui.streakCount = document.getElementById('streak-count');
+    ui.gemCount = document.getElementById('gem-count');
+    ui.pathContainer = document.getElementById('path-container');
+    ui.progressFill = document.getElementById('unit-progress-fill');
     
     // Modal
-    modal: document.getElementById('challenge-modal'),
-    closeModal: document.getElementById('close-modal'),
-    cTitle: document.getElementById('challenge-title'),
-    cDesc: document.getElementById('challenge-desc'),
-    cCode: document.getElementById('challenge-code'),
-    cOptions: document.getElementById('challenge-options'),
-    submitBtn: document.getElementById('submit-answer'),
-    rewardAmount: document.getElementById('reward-amount'),
-    modalProgress: document.getElementById('modal-progress'),
-
-    // Feedback
-    feedbackOverlay: document.getElementById('feedback-overlay'),
-    feedbackPanel: document.getElementById('feedback-panel'),
-    feedbackTitle: document.getElementById('feedback-title'),
-    feedbackMsg: document.getElementById('feedback-msg'),
-    feedbackBtn: document.getElementById('feedback-btn'),
+    ui.modal = document.getElementById('challenge-modal');
+    ui.closeBtn = document.getElementById('close-modal');
+    ui.ideFilename = document.getElementById('ide-filename');
+    ui.rewardAmount = document.getElementById('reward-amount');
+    ui.cDesc = document.getElementById('challenge-desc');
+    ui.cCode = document.getElementById('challenge-code');
+    ui.cOptions = document.getElementById('challenge-options');
+    ui.submitBtn = document.getElementById('submit-answer');
     
-    // Profile
-    profileXp: document.getElementById('profile-xp'),
-    profileMaxStreak: document.getElementById('profile-max-streak'),
-    profileGems: document.getElementById('profile-gems')
-};
+    // Feedback & Game Over
+    ui.fdOverlay = document.getElementById('feedback-overlay');
+    ui.fdPanel = document.getElementById('feedback-panel');
+    ui.fdTitle = document.getElementById('feedback-title');
+    ui.fdMsg = document.getElementById('feedback-msg');
+    ui.fdBtn = document.getElementById('feedback-btn');
+    ui.fdIcon = document.getElementById('feedback-icon');
+    ui.gameOverScreen = document.getElementById('game-over');
+    ui.restartBtn = document.getElementById('restart-btn');
+    
+    // Views
+    ui.vLb = document.getElementById('view-leaderboard');
+    ui.vQ = document.getElementById('view-quests');
+    ui.lbList = document.getElementById('leaderboard-list');
+    ui.lbUserCard = document.getElementById('lb-current-user-card');
+    ui.navLBtn = document.getElementById('nav-leaderboard');
+    ui.navQBtn = document.getElementById('nav-quests');
 
-// Initialization
-function init() {
-    updateTopBar();
-    renderPath();
+    checkOnboarding();
     setupNavigation();
     setupModalEvents();
-    renderLeaderboard();
-    updateProfileStats();
 }
 
-// Update TopBar / Stats
-function updateTopBar() {
-    els.streakCount.textContent = state.streak;
-    els.gemCount.textContent = state.gems;
-    els.profileXp.textContent = state.xp;
-    els.profileMaxStreak.textContent = state.streak;
-    els.profileGems.textContent = state.gems;
-    els.streakCount.parentElement.classList.add('pulse');
-    setTimeout(() => els.streakCount.parentElement.classList.remove('pulse'), 300);
-}
-
-// Save State
-function saveState() {
-    localStorage.setItem('streak', state.streak);
-    localStorage.setItem('gems', state.gems);
-    localStorage.setItem('xp', state.xp);
-    localStorage.setItem('activeQuest', state.activeQuestIndex);
-}
-
-// Navigation Logic
-function setupNavigation() {
-    const navButtons = [els.navQuests, els.navLeaderboard, els.navProfile];
-    
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Update Active Nav
-            navButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Hide all views
-            els.views.forEach(v => v.classList.add('hidden'));
-
-            // Show selected view
-            if(btn.id === 'nav-quests') document.getElementById('view-quests').classList.remove('hidden');
-            if(btn.id === 'nav-leaderboard') {
-                document.getElementById('view-leaderboard').classList.remove('hidden');
-                renderLeaderboard();
-            }
-            if(btn.id === 'nav-profile') {
-                document.getElementById('view-profile').classList.remove('hidden');
-                updateProfileStats();
+function checkOnboarding() {
+    if (localStorage.getItem('killstreak_onboarded') !== 'true') {
+        ui.obsOverlay.classList.remove('hidden');
+        let step = 1;
+        const totalSteps = 3; // Reduced to 3 for brevity
+        
+        ui.obsBtn.addEventListener('click', () => {
+            const currentStepEl = document.getElementById(`obs-${step}`);
+            if (currentStepEl) currentStepEl.classList.add('hidden');
+            
+            const dots = document.querySelectorAll('.dot');
+            if(dots[step-1]) dots[step-1].classList.remove('active');
+            
+            step++;
+            if(step > totalSteps) {
+                localStorage.setItem('killstreak_onboarded', 'true');
+                ui.obsOverlay.classList.add('hidden');
+                startApp();
+            } else {
+                const nextStepEl = document.getElementById(`obs-${step}`);
+                if (nextStepEl) {
+                    nextStepEl.classList.remove('hidden');
+                    nextStepEl.classList.add('fade-in');
+                }
+                if (dots[step-1]) dots[step-1].classList.add('active');
+                if(step === totalSteps) ui.obsBtn.textContent = "Start Coding";
             }
         });
+    } else {
+        ui.obsOverlay.classList.add('hidden');
+        startApp();
+    }
+}
+
+function startApp() {
+    ui.app.classList.remove('hidden-initial');
+    
+    if(state.activeQuestIndex >= quests.length) {
+        showGameOver();
+    } else {
+        updateStats();
+        renderPath();
+    }
+}
+
+function updateStats() {
+    ui.streakCount.textContent = state.streak;
+    ui.gemCount.textContent = state.gems;
+    const progress = Math.min((state.activeQuestIndex / quests.length) * 100, 100);
+    ui.progressFill.style.width = `${progress}%`;
+}
+
+function saveData() {
+    localStorage.setItem('streak', state.streak.toString());
+    localStorage.setItem('gems', state.gems.toString());
+    localStorage.setItem('xp', state.xp.toString());
+    localStorage.setItem('activeQuest', state.activeQuestIndex.toString());
+}
+
+function setupNavigation() {
+    ui.navLBtn.addEventListener('click', () => {
+        ui.navQBtn.classList.remove('active');
+        ui.navLBtn.classList.add('active');
+        ui.vQ.classList.add('hidden');
+        ui.vLb.classList.remove('hidden');
+        renderLeaderboard();
+        window.scrollTo(0, 0);
+    });
+    
+    ui.navQBtn.addEventListener('click', () => {
+        ui.navLBtn.classList.remove('active');
+        ui.navQBtn.classList.add('active');
+        ui.vLb.classList.add('hidden');
+        ui.vQ.classList.remove('hidden');
+        window.scrollTo(0, 0);
     });
 }
 
-// Render the Quest Path map
 function renderPath() {
-    els.pathContainer.innerHTML = '';
+    ui.pathContainer.innerHTML = '';
     
     quests.forEach((q, i) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'node-wrapper';
-
+        const group = document.createElement('div');
+        group.className = 'node-group';
+        
         const node = document.createElement('button');
         node.className = 'path-node';
         
-        // Determine state
         if (i < state.activeQuestIndex) {
             node.classList.add('completed');
-            node.innerHTML = `★ <span class="tooltip">${q.title} (Done)</span>`;
+            node.innerHTML = '★';
         } else if (i === state.activeQuestIndex) {
             node.classList.add('active');
-            node.innerHTML = `🐍 <span class="tooltip">${q.title}</span>`;
+            node.innerHTML = '🐍';
+            const ring = document.createElement('div');
+            ring.className = 'node-ring';
+            node.appendChild(ring);
             node.addEventListener('click', () => openChallenge(q));
         } else {
             node.classList.add('locked');
-            node.innerHTML = `🔒 <span class="tooltip">Locked</span>`;
+            node.innerHTML = '🔒';
         }
-
-        wrapper.appendChild(node);
-        els.pathContainer.appendChild(wrapper);
+        
+        group.appendChild(node);
+        ui.pathContainer.appendChild(group);
     });
 }
 
-// Open Challenge Modal
-function openChallenge(quest) {
+function openChallenge(q) {
+    if (!q) return;
     state.selectedOptionIndex = null;
-    els.submitBtn.disabled = true;
-
-    els.cTitle.textContent = \`Mission: \${quest.title}\`;
-    els.cDesc.textContent = quest.desc;
-    els.cCode.textContent = quest.code;
-    els.rewardAmount.textContent = quest.reward;
+    ui.submitBtn.disabled = true;
     
-    // Progress relative to total quests
-    const progressPerc = (state.activeQuestIndex / quests.length) * 100;
-    els.modalProgress.style.width = \`\${progressPerc}%\`;
-
-    // Render options
-    els.cOptions.innerHTML = '';
-    quest.options.forEach((opt, index) => {
+    ui.ideFilename.innerHTML = `mission_${q.id}.py`;
+    ui.rewardAmount.textContent = q.reward;
+    ui.cDesc.textContent = q.desc;
+    ui.cCode.innerHTML = q.code;
+    
+    ui.cOptions.innerHTML = '';
+    q.options.forEach((opt, idx) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = opt;
+        btn.textContent = `> ${opt}`;
         btn.addEventListener('click', () => {
-            // Deselect others
             document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
-            state.selectedOptionIndex = index;
-            els.submitBtn.disabled = false;
+            state.selectedOptionIndex = idx;
+            ui.submitBtn.disabled = false;
         });
-        els.cOptions.appendChild(btn);
+        ui.cOptions.appendChild(btn);
     });
-
-    els.modal.classList.remove('hidden');
-}
-
-// Modal Events setup
-function setupModalEvents() {
-    els.closeModal.addEventListener('click', () => {
-        els.modal.classList.add('hidden');
-    });
-
-    els.submitBtn.addEventListener('click', () => {
-        checkAnswer();
-    });
-}
-
-// Validation logic and Dopamine triggers
-function checkAnswer() {
-    const currentQuest = quests[state.activeQuestIndex];
-    if (state.selectedOptionIndex === currentQuest.correct) {
-        // Correct Action
-        showFeedback(true, currentQuest);
-    } else {
-        // Incorrect Action (Loss Aversion)
-        showFeedback(false, currentQuest);
-    }
-}
-
-// Show animated bottom popup
-function showFeedback(isSuccess, quest) {
-    els.modal.classList.add('hidden'); // Hide modal to focus on feedback
-    els.feedbackOverlay.classList.remove('hidden');
-    els.feedbackPanel.className = 'feedback-panel'; // Reset classes
     
-    if (isSuccess) {
-        // Trigger specific CSS state
-        els.feedbackPanel.classList.add('success');
-        els.feedbackTitle.textContent = "Spectacular! 🎉";
-        els.feedbackMsg.textContent = \`You earned \${quest.reward} gems and increased your streak!\`;
-        els.feedbackBtn.textContent = "Continue";
-        
-        // State updates
-        state.gems += quest.reward;
-        state.xp += quest.reward * 10;
-        state.streak += 1;
-        state.activeQuestIndex += 1;
-        
-        // Sound could go here
-        
-        els.feedbackBtn.onclick = () => {
-            els.feedbackOverlay.classList.add('hidden');
-            saveState();
-            updateTopBar();
-            renderPath();
-        };
-    } else {
-        // Trigger Error CSS state
-        els.feedbackPanel.classList.add('error');
-        els.feedbackTitle.textContent = "Incorrect 💔";
-        els.feedbackMsg.textContent = "You lost 5 gems. Don't give up!";
-        els.feedbackBtn.textContent = "Try Again";
-        
-        // Loss Aversion mechanics
-        state.gems = Math.max(0, state.gems - 5);
-        if(state.streak > 0) {
-            // Streak protection warning could be added here
-            state.streak = 0; 
-            els.feedbackMsg.textContent += " And your streak was broken!";
-        }
-        
-        els.feedbackBtn.onclick = () => {
-            els.feedbackOverlay.classList.add('hidden');
-            saveState();
-            updateTopBar();
-            openChallenge(quest); // Re-open same challenge
-        };
-    }
+    ui.modal.classList.remove('hidden');
 }
 
-// Leaderboard implementation
-function renderLeaderboard() {
-    // Update current user score in mock data
-    const userEntry = leaderboardData.find(u => u.id === 'user');
-    if (userEntry) {
-        userEntry.score = state.xp;
+function setupModalEvents() {
+    ui.closeBtn.addEventListener('click', () => {
+        ui.modal.classList.add('hidden');
+    });
+    
+    ui.submitBtn.addEventListener('click', () => {
+        const q = quests[state.activeQuestIndex];
+        if(!q) return;
+        
+        if (state.selectedOptionIndex === q.correct) {
+            handleVictory(q);
+        } else {
+            handleDefeat();
+        }
+    });
+
+    ui.restartBtn.addEventListener('click', () => {
+        state.activeQuestIndex = 0;
+        state.xp = 0;
+        saveData();
+        ui.gameOverScreen.classList.add('hidden');
+        startApp();
+    });
+}
+
+function handleVictory(q) {
+    ui.modal.classList.add('hidden');
+    ui.fdOverlay.classList.remove('hidden');
+    ui.fdPanel.className = 'feedback-panel success';
+    
+    ui.fdIcon.textContent = '🚀';
+    ui.fdTitle.textContent = "Success!";
+    ui.fdMsg.textContent = `+${q.reward} Gems. Streak kept alive!`;
+    ui.fdBtn.textContent = "Continue";
+    
+    state.gems += q.reward;
+    state.xp += q.reward * 10;
+    state.streak += 1;
+    state.activeQuestIndex += 1;
+    saveData();
+    updateStats();
+    
+    ui.fdBtn.onclick = () => {
+        ui.fdOverlay.classList.add('hidden');
+        if (state.activeQuestIndex >= quests.length) {
+            showGameOver();
+        } else {
+            renderPath();
+        }
+    };
+}
+
+function handleDefeat() {
+    const editor = document.querySelector('.ide-editor');
+    if(editor) {
+        editor.classList.remove('shake');
+        void editor.offsetWidth;
+        editor.classList.add('shake');
     }
+    
+    setTimeout(() => {
+        ui.modal.classList.add('hidden');
+        ui.fdOverlay.classList.remove('hidden');
+        ui.fdPanel.className = 'feedback-panel error';
+        
+        ui.fdIcon.textContent = '💀';
+        ui.fdTitle.textContent = "Incorrect Syntax";
+        ui.fdMsg.textContent = "You lost 5 Gems. Streak broken.";
+        ui.fdBtn.textContent = "Try Again";
+        
+        state.gems = Math.max(0, state.gems - 5);
+        state.streak = 0;
+        saveData();
+        updateStats();
+        
+        ui.fdBtn.onclick = () => {
+            ui.fdOverlay.classList.add('hidden');
+            openChallenge(quests[state.activeQuestIndex]);
+        };
+    }, 400); // Wait for shake to almost finish
+}
 
-    // Sort descending
-    leaderboardData.sort((a, b) => b.score - a.score);
+function showGameOver() {
+    ui.gameOverScreen.classList.remove('hidden');
+    ui.app.classList.remove('hidden-initial'); // Ensure background is visible
+    updateStats();
+}
 
-    els.leaderboardList.innerHTML = '';
-    leaderboardData.forEach((user, index) => {
+function renderLeaderboard() {
+    const userEntry = mockLeaderboard.find(u => u.id === 'user');
+    if(userEntry) userEntry.score = state.xp;
+    
+    mockLeaderboard.sort((a,b) => b.score - a.score);
+    ui.lbList.innerHTML = '';
+    
+    const uRank = mockLeaderboard.findIndex(u => u.id === 'user') + 1;
+    ui.lbUserCard.innerHTML = `
+        <div class="lb-item">
+            <div class="lb-rank">#${uRank}</div>
+            <div class="lb-user">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${userEntry.avatar}" class="lb-avatar" />
+                <span class="lb-name">${userEntry.name}</span>
+            </div>
+            <div class="lb-score">${userEntry.score} XP</div>
+        </div>
+    `;
+    
+    mockLeaderboard.forEach((user, i) => {
         const li = document.createElement('li');
         li.className = 'lb-item';
-        if(user.id === 'user') li.classList.add('current-user');
-
-        li.innerHTML = \`
-            <div class="lb-rank">#\${index + 1}</div>
+        li.innerHTML = `
+            <div class="lb-rank">#${i+1}</div>
             <div class="lb-user">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=\${user.avatar}" class="lb-avatar" alt="\${user.name}">
-                <span>\${user.name}</span>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${user.avatar}" class="lb-avatar" />
+                <span class="lb-name">${user.name}</span>
             </div>
-            <div class="lb-score">\${user.score} XP</div>
-        \`;
-        els.leaderboardList.appendChild(li);
+            <div class="lb-score">${user.score} XP</div>
+        `;
+        ui.lbList.appendChild(li);
     });
 }
 
-function updateProfileStats() {
-    els.profileXp.textContent = state.xp;
-    // Assuming current streak is max streak for this demo
-    els.profileMaxStreak.textContent = state.streak;
-    els.profileGems.textContent = state.gems;
-}
-
-// Start App
 document.addEventListener('DOMContentLoaded', init);
