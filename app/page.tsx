@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import './style.css';
+import SignIn from './components/SignIn';
 
 // --- UTILS ---
 const AudioPacks = {
@@ -420,6 +421,7 @@ export default function Page() {
         <header className="topbar">
           <div className="wordmark">Skill<em>Streak</em></div>
           <div className="chips">
+            <SignIn />
             <div className="chip"><div className="cdot" style={{ background: '#e11d48' }}></div><span>{S.hearts}/5</span></div>
             <div className="chip"><div className="cdot f"></div><span>{S.streak}</span></div>
             <div className="chip"><div className="cdot g"></div><span>{S.gems}</span></div>
