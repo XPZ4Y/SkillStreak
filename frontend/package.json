@@ -1,0 +1,11 @@
+{
+  "name": "killstreak",
+  "version": "1.0.0",
+  "description": "Gamified Python Learning App",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx -y serve ."
+  },
+  "author": "",
+  "license": "ISC"
+}
